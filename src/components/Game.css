@@ -1,0 +1,17 @@
+table {
+  font-size: 20px;
+  color: #333;
+}
+
+th, td {
+  --size: 1.8em;
+  width: var(--size);
+  height: var(--size);
+  text-align: center;
+  box-sizing: border-box;
+  border: 1px solid #bbb;
+}
+
+.active {
+  background-color: #4ebac2;
+}
