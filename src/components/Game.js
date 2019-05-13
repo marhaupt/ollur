@@ -9,7 +9,10 @@ export default class Game extends Component {
     numbers: [],
     rows: [],
     cols: [],
+    sumRows: [],
+    sumCols: [],
     active: [],
+    finished: false,
   };
 
   setup() {
@@ -18,7 +21,7 @@ export default class Game extends Component {
     const newTask = new Array(size)
       .fill(0)
       .map(_ =>
-        new Array(size).fill(0).map(_ => (random(0, 1) ? random() : 0))
+        new Array(size).fill(0).map(_ => (random(1, 10) > 3 ? random() : 0))
       );
 
     const newRows = new Array(size)
@@ -34,10 +37,43 @@ export default class Game extends Component {
     return { newTask, newRows, newCols };
   }
 
+  getSums = () => {
+    const { active, numbers, size, rows, cols } = this.state;
+
+    // sum up rows
+    const sumRows = numbers.map((row, ri) =>
+      row.reduce((s, n, ci) => (active[ri * size + ci] ? s + n : s), 0)
+    );
+
+    const sumCols = new Array(size).fill(0);
+
+    numbers.forEach((row, ri) =>
+      row.forEach((cell, ci) => {
+        if (active[ri * size + ci]) {
+          sumCols[ci] = sumCols[ci] + cell;
+        }
+      })
+    );
+
+    let finished = false;
+    if (rows === sumRows && cols === sumCols) finished = true;
+
+    this.setState({ sumRows, sumCols, finished });
+  };
+
+  toggleActive = index => {
+    const { active } = this.state;
+
+    const newActive = [...active];
+    newActive[index] = !active[index];
+
+    this.setState({ active: newActive }, this.getSums);
+  };
+
   componentDidMount() {
     const { size } = this.state;
 
-    let task = [0];
+    let task = [];
     let rows = [0];
     let cols = [0];
 
@@ -47,39 +83,54 @@ export default class Game extends Component {
       task = newTask;
       rows = newRows;
       cols = newCols;
-      console.log(task, rows, cols);
     }
 
     const numbers = task.map(row => row.map(n => (n > 0 ? n : random())));
 
-    // TODO: make in 1d for better change
-    const active = new Array(size + 1)
-      .fill(new Array(size + 1).fill(0))
-      .map(row => row.map(cell => false));
+    const active = new Array(size ** 2).fill(0).map(cell => false);
 
     this.setState({ task, numbers, rows, cols, active });
   }
 
   render() {
-    const { numbers, rows, cols, active } = this.state;
+    const { numbers, rows, cols, active, size, sumCols, sumRows } = this.state;
 
     const complete = [
       ['', ...cols],
       ...numbers.map((row, i) => [rows[i], ...row]),
     ];
 
-    // TODO: get rid of table, make cells comps and give then onClick toggleActive
-    // TODO: check sums of rows, cols and compare to state
+    // TODO: get rid of table
+    // TODO: make cells comps
     return (
       <table>
         <tbody>
-          {complete.map((row, i) => (
-            <tr key={i}>
-              {row.map((cell, j) =>
-                i === 0 || j === 0 ? (
-                  <th key={j}>{cell}</th>
+          {complete.map((row, ri) => (
+            <tr key={ri}>
+              {row.map((cell, ci) =>
+                (ri === 0 && ci > 0) || (ci === 0 && ri > 0) ? (
+                  <th
+                    key={ci}
+                    className={
+                      (ri === 0 && cols[ci - 1] === sumCols[ci - 1]) ||
+                      (ci === 0 && rows[ri - 1] === sumRows[ri - 1])
+                        ? 'finished'
+                        : ''
+                    }
+                  >
+                    {cell}
+                  </th>
                 ) : (
-                  <td key={j} className={active[i][j] ? 'active' : ''}>
+                  <td
+                    key={ci}
+                    className={
+                      active[(ri - 1) * size + (ci - 1)] ? 'active' : ''
+                    }
+                    onClick={() => {
+                      const index = (ri - 1) * size + (ci - 1);
+                      this.toggleActive(index);
+                    }}
+                  >
                     {cell}
                   </td>
                 )

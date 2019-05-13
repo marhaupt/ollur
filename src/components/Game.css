@@ -10,8 +10,14 @@ th, td {
   text-align: center;
   box-sizing: border-box;
   border: 1px solid #bbb;
+  user-select: none;
+  cursor: pointer;
 }
 
 .active {
   background-color: #4ebac2;
+}
+
+.finished {
+  background-color: #d8756e;
 }
