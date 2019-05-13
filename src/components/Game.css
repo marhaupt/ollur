@@ -1,6 +1,9 @@
-table {
-  font-size: 20px;
+main {
+  font-size: 4vmin;
   color: #333;
+}
+
+table {
 }
 
 th, td {
@@ -9,15 +12,45 @@ th, td {
   height: var(--size);
   text-align: center;
   box-sizing: border-box;
-  border: 1px solid #bbb;
   user-select: none;
+  border: 1px solid #bbb;
+  transition: all 100ms ease-in-out;
+}
+
+td {
   cursor: pointer;
 }
 
 .active {
-  background-color: #4ebac2;
+  background-color: #008d97;
+  color: white;
 }
 
 .finished {
   background-color: #d8756e;
+}
+
+.empty {
+  border: none;
+}
+
+.controls {
+  text-align: center;
+  font-size: 0.8em; 
+}
+
+.result {
+  text-align: center;
+
+}
+
+button {
+  border: none;
+  background-color: #008d97;
+  color: white;
+  font-size: 1em;
+  text-transform: uppercase;
+  padding: 0.5em;
+  margin: 0 0.5em;
+  cursor: pointer;
 }

@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { random } from '../utils';
+import { random, arraysEqual } from '../utils';
 import './Game.css';
 
 export default class Game extends Component {
@@ -55,8 +55,7 @@ export default class Game extends Component {
       })
     );
 
-    let finished = false;
-    if (rows === sumRows && cols === sumCols) finished = true;
+    const finished = arraysEqual(rows, sumRows) && arraysEqual(cols, sumCols);
 
     this.setState({ sumRows, sumCols, finished });
   };
@@ -70,6 +69,28 @@ export default class Game extends Component {
     this.setState({ active: newActive }, this.getSums);
   };
 
+  setActive = bool => {
+    const { size } = this.state;
+
+    const active = new Array(size ** 2).fill(0).map(cell => bool);
+
+    this.setState({ active }, this.getSums);
+  };
+
+  troubleRCT = (rows, cols, task) => {
+    if (rows.some(n => n === 0)) return true;
+    if (cols.some(n => n === 0)) return true;
+
+    const rowOk = task.reduce((tr, row) => row.some(n => n === 0) && tr, true);
+    let colOk = true;
+
+    task[0].forEach((cell, i) => {
+      colOk = colOk && task.reduce((tc, row) => row[i] === 0 || tc, false);
+    });
+
+    return !colOk || !rowOk;
+  };
+
   componentDidMount() {
     const { size } = this.state;
 
@@ -77,13 +98,15 @@ export default class Game extends Component {
     let rows = [0];
     let cols = [0];
 
-    while (rows.some(n => n === 0) || cols.some(n => n === 0)) {
+    while (this.troubleRCT(rows, cols, task)) {
       const { newTask, newRows, newCols } = this.setup();
 
       task = newTask;
       rows = newRows;
       cols = newCols;
     }
+
+    console.table(task);
 
     const numbers = task.map(row => row.map(n => (n > 0 ? n : random())));
 
@@ -93,52 +116,76 @@ export default class Game extends Component {
   }
 
   render() {
-    const { numbers, rows, cols, active, size, sumCols, sumRows } = this.state;
+    const {
+      numbers,
+      rows,
+      cols,
+      active,
+      size,
+      sumCols,
+      sumRows,
+      finished,
+    } = this.state;
 
     const complete = [
-      ['', ...cols],
-      ...numbers.map((row, i) => [rows[i], ...row]),
+      ['', ...cols, ''],
+      ...numbers.map((row, i) => [rows[i], ...row, rows[i]]),
+      ['', ...cols, ''],
     ];
 
     // TODO: get rid of table
     // TODO: make cells comps
     return (
-      <table>
-        <tbody>
-          {complete.map((row, ri) => (
-            <tr key={ri}>
-              {row.map((cell, ci) =>
-                (ri === 0 && ci > 0) || (ci === 0 && ri > 0) ? (
-                  <th
-                    key={ci}
-                    className={
-                      (ri === 0 && cols[ci - 1] === sumCols[ci - 1]) ||
-                      (ci === 0 && rows[ri - 1] === sumRows[ri - 1])
-                        ? 'finished'
-                        : ''
-                    }
-                  >
-                    {cell}
-                  </th>
-                ) : (
-                  <td
-                    key={ci}
-                    className={
-                      active[(ri - 1) * size + (ci - 1)] ? 'active' : ''
-                    }
-                    onClick={() => {
-                      const index = (ri - 1) * size + (ci - 1);
-                      this.toggleActive(index);
-                    }}
-                  >
-                    {cell}
-                  </td>
-                )
-              )}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <main>
+        <table>
+          <tbody>
+            {complete.map((row, ri) => (
+              <tr key={ri}>
+                {row.map((cell, ci) =>
+                  ri === 0 || ri === size + 1 || ci === 0 || ci === size + 1 ? (
+                    <th
+                      key={ci}
+                      className={
+                        (((ri === 0 || ri === size + 1) &&
+                          cols[ci - 1] === sumCols[ci - 1]) ||
+                          ((ci === 0 || ci === size + 1) &&
+                            rows[ri - 1] === sumRows[ri - 1])) &&
+                        cell !== ''
+                          ? 'finished'
+                          : cell === ''
+                          ? 'empty'
+                          : ''
+                      }
+                    >
+                      {cell}
+                    </th>
+                  ) : (
+                    <td
+                      key={ci}
+                      className={
+                        active[(ri - 1) * size + (ci - 1)] ? 'active' : ''
+                      }
+                      onClick={() => {
+                        const index = (ri - 1) * size + (ci - 1);
+                        this.toggleActive(index);
+                      }}
+                    >
+                      {cell}
+                    </td>
+                  )
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <p className="controls">
+          <button onClick={() => this.setActive(false)}>Clear all</button>
+          <button onClick={() => this.setActive(true)}>Activate</button>
+        </p>
+        <p className="result">
+          <strong>{finished ? 'DONE!' : '...'}</strong>
+        </p>
+      </main>
     );
   }
 }
